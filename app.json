@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0a1628",
+        "foregroundImage": "./assets/images/icon.png"
+      },
+      "package": "com.priceamnesia.app",
+      "versionCode": 1
+    },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "icon": "./assets/images/icon.png",
+    "ios": {
+      "supportsTablet": true
+    },
+    "name": "Price Amnesia",
+    "newArchEnabled": true,
+    "orientation": "portrait",
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-camera"
+    ],
+    "scheme": "priceamnesia",
+    "slug": "price-amnesia",
+    "userInterfaceStyle": "automatic",
+    "version": "1.0.0",
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/images/favicon.png",
+      "output": "single"
+    }
+  }
+}
