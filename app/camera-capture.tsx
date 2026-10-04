@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,7 +36,7 @@ export default function CameraCaptureScreen() {
     setBusy(true);
     try {
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
+        quality: 0.6,
         base64: true,
       });
       router.push({
@@ -65,11 +65,15 @@ export default function CameraCaptureScreen() {
         </View>
         <View style={styles.bottomBar}>
           <TouchableOpacity
-            style={styles.shutter}
+            style={[styles.shutter, busy && styles.shutterBusy]}
             onPress={takePhoto}
             disabled={busy}
           >
-            <CameraIcon size={28} color={Colors.navy[900]} />
+            {busy ? (
+              <ActivityIndicator size="small" color={Colors.navy[900]} />
+            ) : (
+              <CameraIcon size={28} color={Colors.navy[900]} />
+            )}
           </TouchableOpacity>
         </View>
       </CameraView>
@@ -150,5 +154,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.amber[400],
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  shutterBusy: {
+    opacity: 0.7,
   },
 });
