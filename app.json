@@ -3,7 +3,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0a1628",
-        "foregroundImage": "./assets/images/icon.png"
+        "foregroundImage": "./icon.png"
       },
       "package": "com.priceamnesia.app",
       "versionCode": 1
