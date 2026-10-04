@@ -10,8 +10,7 @@
     },
     "experiments": {
       "typedRoutes": true
-    },
-    "icon": "./assets/images/icon.png",
+    },"icon": "./icon.png"",
     "ios": {
       "supportsTablet": true
     },
