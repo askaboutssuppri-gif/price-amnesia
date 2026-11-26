@@ -1,0 +1,93 @@
+# Codemagic CI/CD — builds Price Amnesia iOS (Capacitor 6) and ships it to
+# TestFlight WITHOUT needing a Mac locally. The build runs on Codemagic's
+# macOS machines.
+#
+# The Capacitor project lives at the repo root (appId com.priceamnesia.app).
+# The iOS native project is committed (ios/App) and synced fresh each run.
+#
+# BEFORE THE FIRST BUILD — configure the App Store Connect integration in the
+# Codemagic UI (Teams -> Integrations -> Apple -> connect your API key,
+# name it "PriceAmnesia"). The name must match `integrations.app_store_connect`
+# below. The API key is created in App Store Connect -> Users and Access ->
+# Integrations (Generate API Key, Admin role); download the .p8 once.
+
+workflows:
+  price-amnesia-ios:
+    name: Price Amnesia iOS — TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    integrations:
+      # Name you gave the App Store Connect API key inside the Codemagic UI.
+      app_store_connect: PriceAmnesia
+
+    environment:
+      ios_signing:
+        distribution_type: app_store # Codemagic auto-creates the cert + profile
+        bundle_identifier: com.priceamnesia.app
+      vars:
+        # Apple ID of the app record (the numeric "Apple ID" on the App Store
+        # Connect app page, NOT the bundle id). Used to auto-bump the build number.
+        APP_STORE_APPLE_ID: 6837584521
+        XCODE_WORKSPACE: "App.xcworkspace"
+        XCODE_SCHEME: "App"
+      node: 20
+      xcode: latest
+      cocoapods: default
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+
+    scripts:
+      - name: Install JS dependencies
+        script: npm ci
+
+      - name: Build web assets
+        script: npm run build
+
+      - name: Sync Capacitor iOS
+        script: npx cap sync ios
+
+      - name: Install CocoaPods + apply RevenueCat patch
+        script: |
+          cd ios/App
+          pod install
+          # pod install regenerates Pods/ and wipes the vendored RevenueCat
+          # 5.20.0 PaywallColor fix (upstream PR #6949 backport). Without it
+          # the build fails under Xcode 27 / Swift 6 ("Invalid redeclaration
+          # of synthesized memberwise init"). See REVENUECAT-5.20.0-PATCH.md.
+          patch -p1 --forward < ../../scripts/revenuecat-paywallcolor.patch
+
+      - name: Apply App Store signing profiles to the Xcode project
+        script: |
+          cd ios/App
+          xcode-project use-profiles
+
+      - name: Auto-increment the build number
+        script: |
+          cd ios/App
+          LATEST=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          agvtool new-version -all $(($LATEST + 1))
+
+      - name: Build the signed .ipa
+        script: |
+          cd ios/App
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - ios/App/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        # First runs land in TestFlight only. Flip to true (and add
+        # release_type) once you're ready to actually submit for review.
+        submit_to_testflight: true
+        submit_to_app_store: false
